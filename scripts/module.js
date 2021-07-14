@@ -4,8 +4,24 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
     registerPackageDebugFlag(CombatTurn.ID);
 });
 
+Hooks.once("socketlib.ready", () => {
+    CombatTurn.log("socketLib.ready");
+	CombatTurn.socket = socketlib.registerModule(CombatTurn.ID);
+	CombatTurn.socket.register("timer", logtimer);
+});
+
+function logtimer(timer) {
+	CombatTurn.log(`timer: ${timer}`);
+}
+
 Hooks.once('ready', async function() {
     CombatTurn.log("ready");
+    // game.socket.on(CombatTurn.ID, (data) => {
+    //     if (!game.user.isGM) {
+    //         CombatTurn.timer = data;
+    //         CombatTurn.log(CombatTurn.timer);
+    //     }
+    // });
 });
 
 // Hooks.on('createCombatant', async function(combatantDoc, options, userId) {
@@ -25,25 +41,49 @@ Hooks.once('ready', async function() {
 // });
 
 Hooks.on('updateCombat', async function(combatDoc, diff, options, userId) {
-    CombatTurn.log("updateCombat", combatDoc.turns.map(turn => turn.name));
+    //CombatTurn.log("updateCombat", combatDoc.turns.map(turn => turn.name));
 
-    const activePlayer = game.users.current.character?._id;
-    const activeCombatant = combatDoc.turns[combatDoc.current.turn].actor?.id;
+    const currentCombatantIndex = combatDoc.current.turn;
+    const currentCombatant = combatDoc.turns[currentCombatantIndex];
 
-    if(activePlayer === activeCombatant) {
+    if(currentCombatant.actor?.isOwner && !game.user.isGM) {
 
-        CombatTurn.log("YOUR TURN");
+        // ACTIVE PLAYER
+
+        CombatTurn.log("YOUR TURN", currentCombatant.actor.name);
+
+    }
+
+    const nextCombatantIndex = (currentCombatantIndex + 1) % combatDoc.turns.length;
+    const nextCombatant = combatDoc.turns[nextCombatantIndex]
+
+    if(nextCombatant.actor?.isOwner && !game.user.isGM) {
+
+        // NEXT ACTIVE PLAYER
+
+        CombatTurn.log("YOU'RE NEXT", nextCombatant.actor.name);
 
     }
 
-    const nextCombatantIndex = (combatDoc.current.turn + 1) % combatDoc.turns.length;
-    const nextCombatant = combatDoc.turns[nextCombatantIndex].actor?.id;
+    if(currentCombatant.id !== CombatTurn.currentCombatantId && game.user.isGM){
 
-    if(activePlayer === nextCombatant) {
+        CombatTurn.log("start Timer");
 
-        CombatTurn.log("YOU'RE NEXT");
+        clearInterval(CombatTurn.intervalId);
+
+        CombatTurn.intervalId = setInterval(() => {
+
+            CombatTurn.timer++;
+
+            CombatTurn.log(CombatTurn.timer);
+
+            CombatTurn.socket.executeForOthers("timer", CombatTurn.timer);
+
+        }, 1000);
 
     }
+
+    CombatTurn.currentCombatantId = currentCombatant.id;
 
 });
 

@@ -7,6 +7,7 @@
     "manifestPlusVersion": "1.0.0",
     "minimumCoreVersion": "0.8.8",
     "compatibleCoreVersion": "0.8.8",
+    "socket": true,
     "authors": [
         {
             "name": "andregu",
@@ -17,7 +18,12 @@
             "url": "https://github.com/luisjs"
         }
     ],
-    "dependencies": [],
+    "dependencies": [
+        {
+            "name": "socketlib",
+            "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/master/module.json"
+        }
+    ],
     "conflicts": [],
     "esmodules": [
         "/scripts/module.js"
