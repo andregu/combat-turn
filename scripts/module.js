@@ -1,4 +1,5 @@
 import { CombatTurn } from "./CombatTurn.js";
+import { registerSettings } from "./settings.js";
 
 Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
     registerPackageDebugFlag(CombatTurn.ID);
@@ -10,18 +11,48 @@ Hooks.once("socketlib.ready", () => {
 	CombatTurn.socket.register("timer", logtimer);
 });
 
+function easeInQuart(x) {
+    return x ** 4;
+}
+
 function logtimer(timer) {
-	CombatTurn.log(`timer: ${timer}`);
+    const maxTimer = game.settings.get(CombatTurn.ID, "timer-duration") * 60;
+
+    const tickSound = game.settings.get(CombatTurn.ID, "timer-tick-sound");
+    if (tickSound != "") {
+        AudioHelper.play({
+            src: tickSound,
+            volume: (game.settings.get(CombatTurn.ID, "timer-tick-volume") / 100.0) * easeInQuart(timer / maxTimer)
+        })
+    }
+
+    //TODO: update timer
+    CombatTurn.log(timer, maxTimer);
+
+    if(timer >= maxTimer){
+
+        const finishedSound = game.settings.get(CombatTurn.ID, "timer-finished-sound");
+        if (finishedSound) {
+            AudioHelper.play({
+                src: finishedSound,
+                volume: game.settings.get(CombatTurn.ID, "timer-finished-volume") / 100.0,
+                autoplay: true
+            })
+        }
+
+        if(game.user.isGM) {
+            clearInterval(CombatTurn.intervalId);
+        }
+    }
+}
+
+function updateForm() {
+
 }
 
 Hooks.once('ready', async function() {
     CombatTurn.log("ready");
-    // game.socket.on(CombatTurn.ID, (data) => {
-    //     if (!game.user.isGM) {
-    //         CombatTurn.timer = data;
-    //         CombatTurn.log(CombatTurn.timer);
-    //     }
-    // });
+    registerSettings();
 });
 
 // Hooks.on('createCombatant', async function(combatantDoc, options, userId) {
@@ -49,6 +80,7 @@ Hooks.on('updateCombat', async function(combatDoc, diff, options, userId) {
     if(currentCombatant.actor?.isOwner && !game.user.isGM) {
 
         // ACTIVE PLAYER
+        // TODO: update form
 
         CombatTurn.log("YOUR TURN", currentCombatant.actor.name);
 
@@ -70,16 +102,14 @@ Hooks.on('updateCombat', async function(combatDoc, diff, options, userId) {
         CombatTurn.log("start Timer");
 
         clearInterval(CombatTurn.intervalId);
+        CombatTurn.timer = 0;
 
         CombatTurn.intervalId = setInterval(() => {
 
             CombatTurn.timer++;
+            CombatTurn.socket.executeForEveryone("timer", CombatTurn.timer);
 
-            CombatTurn.log(CombatTurn.timer);
-
-            CombatTurn.socket.executeForOthers("timer", CombatTurn.timer);
-
-        }, 1000);
+        }, 1000); // TODO: Change to 1000
 
     }
 
