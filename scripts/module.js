@@ -1,5 +1,7 @@
 import { CombatTurn } from "./CombatTurn.js";
 import { registerSettings } from "./settings.js";
+import Ui from "./ui.js";
+const ui = new Ui();
 
 Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
     registerPackageDebugFlag(CombatTurn.ID);
@@ -67,9 +69,9 @@ Hooks.once('ready', async function() {
 //     CombatTurn.log("deleteCombatant", combatantDoc);
 // });
 
-// Hooks.on('createCombat', async function(combatDoc, options, userId) {
-//     CombatTurn.log("createCombat", combatDoc);
-// });
+Hooks.on('createCombat', async function(combatDoc, options, userId) {
+    ui.render(true);
+});
 
 Hooks.on('updateCombat', async function(combatDoc, diff, options, userId) {
     //CombatTurn.log("updateCombat", combatDoc.turns.map(turn => turn.name));
@@ -81,8 +83,19 @@ Hooks.on('updateCombat', async function(combatDoc, diff, options, userId) {
 
         // ACTIVE PLAYER
         // TODO: update form
-
+       
         CombatTurn.log("YOUR TURN", currentCombatant.actor.name);
+
+        const yourTurnEnable = game.settings.get(CombatTurn.ID, "yourturn-enable");
+        const yourTurnSound = game.settings.get(CombatTurn.ID, "yourturn-trigger-sound");
+        if (yourTurnEnable && yourTurnSound) {
+            AudioHelper.play({
+                src: yourTurnSound,
+                volume: game.settings.get(CombatTurn.ID, "yourturn-trigger-volume") / 100.0,
+                autoplay: true
+            })
+        }
+
 
     }
 
@@ -94,6 +107,16 @@ Hooks.on('updateCombat', async function(combatDoc, diff, options, userId) {
         // NEXT ACTIVE PLAYER
 
         CombatTurn.log("YOU'RE NEXT", nextCombatant.actor.name);
+
+        const nextUpEnable = game.settings.get(CombatTurn.ID, "nextup-enable");
+        const nextUpSound = game.settings.get(CombatTurn.ID, "nextup-trigger-sound");
+        if (nextUpEnable && nextUpSound) {
+            AudioHelper.play({
+                src: nextUpSound,
+                volume: game.settings.get(CombatTurn.ID, "nextup-trigger-volume") / 100.0,
+                autoplay: true
+            })
+        }
 
     }
 
@@ -117,9 +140,10 @@ Hooks.on('updateCombat', async function(combatDoc, diff, options, userId) {
 
 });
 
-// Hooks.on('deleteCombat', async function(combatDoc, options, userId) {
-//     CombatTurn.log("deleteCombat", combatDoc);
-// });
+Hooks.on('deleteCombat', async function(combatDoc, options, userId) {
+    CombatTurn.log("deleteCombat", combatDoc);
+    ui.close();
+});
 
 // Hooks.on('pauseGame', async function(state) {
 //     CombatTurn.log("pauseGame", state);

@@ -1,0 +1,35 @@
+#combat-turn { 
+    height: 100px;
+    position: absolute;
+    top: 70px;
+    left: 120px;
+    display: flex;
+    align-items: center;
+}
+
+#combat-turn .combat-turn-avatar {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin-right: 10px;
+}
+
+#combat-turn .combat-turn-avatar .combat-turn-avatar-image { 
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    background: yellow;
+    position: absolute;
+    z-index: 1;
+    inset: 10px;
+}
+
+#combat-turn .combat-turn-avatar .combat-turn-avatar-timer { 
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    background: purple;
+    position: absolute;
+    z-index: 0;
+
+}
